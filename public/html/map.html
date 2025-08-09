@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Science Map</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Arial', sans-serif; }
+    .container { display: flex; height: 100vh; width: 100vw; overflow: hidden; transition: all 0.3s ease; }
+    .sidebar { width: 280px; background-color: #a58c6f; padding: 20px; transition: all 0.3s ease; position: relative; }
+    .sidebar.hide { transform: translateX(-100%); position: absolute; left: 0; top: 0; bottom: 0; z-index: 1; }
+    .sidebar .search-box { display: flex; align-items: center; margin-bottom: 20px; }
+    .sidebar input[type="text"] { flex: 1; padding: 10px; border-radius: 8px; border: none; outline: none; }
+    .menu-list { list-style: none; padding: 0; margin: 0; }
+    .menu-list li { padding: 10px; background-color: #fff; margin-bottom: 10px; border-radius: 6px; font-weight: bold; color: #5a422d; cursor: pointer; display: flex; align-items: center; gap: 10px; flex-direction: column; user-select: none; }
+    .menu-item-main { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .submenu { width: 100%; margin-top: 8px; display: none; flex-direction: column; gap: 5px; }
+    .submenu.visible { display: flex; }
+    .submenu div { background-color: #f5f5f5; border-radius: 4px; padding: 6px 10px; font-weight: normal; cursor: pointer; user-select: none; }
+    .main { flex: 1; position: relative; background-color: #fdfdfd; padding: 20px; transition: all 0.3s ease; width: calc(100vw - 280px); display: flex; flex-direction: column; }
+    .container.full .main { width: 100vw; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+    .left-bar { display: flex; align-items: center; gap: 10px; }
+    .toggle-btn { font-size: 24px; cursor: pointer; background: none; border: none; user-select: none; }
+    .settings { position: relative; cursor: pointer; user-select: none; }
+    .settings svg { width: 22px; height: 22px; fill: #333; }
+    .settings-menu { display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); min-width: 180px; z-index: 999; overflow: hidden; }
+    .settings.active .settings-menu { display: block; }
+    .settings-menu .profile-info { padding: 12px; text-align: center; border-bottom: 1px solid #ccc; }
+    .settings-menu .profile-info .name { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+    .settings-menu .profile-info .faculty-major { font-size: 14px; color: #555; }
+    .settings-menu .logout { display: block; text-align: center; padding: 10px; background: #151717; color: white; text-decoration: none; border-radius: 0 0 8px 8px; font-weight: bold; user-select: none; }
+    .settings-menu .logout:hover { background: #333; }
+    .canvas-area { margin-top: 20px; border: 2px dashed #ccc; width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #666; }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="search-box">
+        <input type="text" placeholder="ค้นหา..." id="searchInput" onkeyup="filterList()">
+      </div>
+      <ul class="menu-list" id="menuList">
+        <li data-name="ตึกคณะ" onclick="toggleSubmenu('building-submenu')">
+          <div class="menu-item-main">🏛 ตึกคณะ ⮟</div>
+          <div class="submenu" id="building-submenu">
+            <div onclick="showCanvas('SC01')">SC01</div>
+            <div onclick="showCanvas('SC02')">SC02</div>
+            <div onclick="showCanvas('SC03')">SC03</div>
+          </div>
+        </li>
+        <li data-name="ศูนย์อาหาร" onclick="showCanvas('ศูนย์อาหาร')">🍜 ศูนย์อาหาร</li>
+        <li data-name="ตู้ & เต่าบิน" onclick="showCanvas('ตู้ & เต่าบิน')">⚙️ ตู้อาหาร & เต่าบิน</li>
+        <li data-name="ที่จอดรถยนต์" onclick="showCanvas('ที่จอดรถยนต์')">🚗 ที่จอดรถยนต์</li>
+        <li data-name="ที่จอดรถมอไซค์" onclick="showCanvas('ที่จอดรถมอไซค์')">🛵 ที่จอดรถมอไซค์</li>
+      </ul>
+      <p style="position: absolute; bottom: 10px; left: 20px; font-size: 12px;">ฉัน</p>
+    </div>
+
+    <!-- Main -->
+    <div class="main" id="main">
+      <div class="top-bar">
+        <div class="left-bar">
+          <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+          <span style="font-weight: bold;">SCIENCE MAP</span>
+        </div>
+        <div class="settings" onclick="toggleSettingsMenu(this)">
+          <svg viewBox="0 0 24 24" aria-label="Settings Icon" role="img" tabindex="0">
+            <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm7.43-3.5c0-.36-.03-.72-.08-1.07l2.11-1.65a.5.5 0 0 0 .12-.65l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.16 7.16 0 0 0-1.84-1.07L14.5 2.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5l-.24 2.88a7.16 7.16 0 0 0-1.84 1.07l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.65l2.11 1.65c-.05.35-.08.71-.08 1.07s.03.72.08 1.07l-2.11 1.65a.5.5 0 0 0-.12.65l2 3.46a.5.5 0 0 0 .61.22l2.49-1a7.16 7.16 0 0 0 1.84 1.07L9.5 21.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5l.24-2.88a7.16 7.16 0 0 0 1.84-1.07l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.65l-2.11-1.65c.05-.35.08-.71.08-1.07z"/>
+          </svg>
+          <div class="settings-menu" role="menu">
+            <div class="profile-info">
+              <div class="name" id="userName">ชื่อ นามสกุล</div>
+              <div class="faculty-major" id="userFacultyMajor">คณะของคุณ | สาขาของคุณ</div>
+            </div>
+            <a href="index.html" class="logout" onclick="logoutUser(event)">ออกจากระบบ</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-area" id="canvas">
+        <model-viewer
+          src="../models/cp09model.glb"
+          alt="3D model"
+          auto-rotate
+          camera-controls
+          style="width: 100%; height: 100%;"
+        ></model-viewer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const container = document.getElementById('container');
+      sidebar.classList.toggle('hide');
+      container.classList.toggle('full');
+    }
+    function filterList() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const items = document.querySelectorAll('#menuList li');
+      items.forEach(item => {
+        const text = item.dataset.name.toLowerCase();
+        item.style.display = text.includes(input) ? 'flex' : 'none';
+      });
+    }
+    function toggleSubmenu(id) {
+      const submenu = document.getElementById(id);
+      submenu.classList.toggle('visible');
+    }
+    function showCanvas(name) {
+      const canvas = document.getElementById('canvas');
+      if (name === 'SC01' || name === 'SC02' || name === 'SC03') {
+        canvas.innerHTML = `<div><strong>${name}</strong><br>อาคารย่อยของคณะ</div>`;
+      } else if (name === 'ศูนย์อาหาร') {
+        canvas.innerHTML = '<div><strong>ศูนย์อาหาร</strong><br>รหัส: 09</div>';
+      } else if (name === 'ตู้ & เต่าบิน') {
+        canvas.innerHTML = '<div><strong>ตู้ & เต่าบิน</strong><br>รหัส: 13</div>';
+      } else if (name === 'ที่จอดรถยนต์') {
+        canvas.innerHTML = '<div><strong>ที่จอดรถยนต์</strong><br>โซน C และ D</div>';
+      } else if (name === 'ที่จอดรถมอไซค์') {
+        canvas.innerHTML = '<div><strong>ที่จอดรถมอไซค์</strong><br>ใต้อาคาร SC01 และหลังตึกฟิสิกส์</div>';
+      }
+    }
+    function toggleSettingsMenu(elem) { elem.classList.toggle('active'); }
+    function logoutUser(event) {
+      event.preventDefault();
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    // โหลดข้อมูลผู้ใช้จาก LocalStorage
+    window.addEventListener("DOMContentLoaded", () => {
+      const fullName = localStorage.getItem("fullName");
+      const faculty = localStorage.getItem("faculty");
+      const major = localStorage.getItem("major");
+      if (!fullName || !faculty || !major) {
+        window.location.href = "index.html"; // กลับไป login ถ้าไม่มีข้อมูล
+        return;
+      }
+      document.getElementById("userName").textContent = fullName;
+      document.getElementById("userFacultyMajor").textContent = `${faculty} | ${major}`;
+    });
+
+    // ปิด settings menu ถ้าคลิกข้างนอก
+    window.addEventListener("click", (e) => {
+      const settings = document.querySelector(".settings");
+      if (!settings.contains(e.target)) {
+        settings.classList.remove("active");
+      }
+    });
+  </script>
+
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</body>
+</html>
