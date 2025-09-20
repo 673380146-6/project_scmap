@@ -5,6 +5,10 @@ import morgan from 'morgan';
 
 // routes
 import userRoutes from './routes_API/users.routes.js';
+import authRoutes from './routes_API/auth.router.js';
+
+// middleware (error handler)
+import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -21,5 +25,9 @@ app.get('/', (req, res) => {
 
 // api routes
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/auth', authRoutes);
+
+// error handler (ไว้ล่างสุด)
+app.use(errorHandler);
 
 export default app;
