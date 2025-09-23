@@ -58,10 +58,13 @@ export default {
     goToLogin() {
       this.isExiting = true;
       setTimeout(() => {
-        window.location.href = "login.html";
+        this.$router.push('/login');
       }, 800);
     },
   },
+  mounted() {
+    window.goToLogin = this.goToLogin;
+  }
 };
 </script>
 
