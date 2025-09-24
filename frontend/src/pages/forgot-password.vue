@@ -28,22 +28,8 @@
 
 <script setup>
 import { ref } from "vue";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 
-// 🔥 Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAmfunEqGUmZHabiPKYwCuay3JCRVXa_DU",
-  authDomain: "project-web-f9a73.firebaseapp.com",
-  projectId: "project-web-f9a73",
-  storageBucket: "project-web-f9a73.appspot.com",
-  messagingSenderId: "809705005062",
-  appId: "1:809705005062:web:f4736c194fc7cf68c5e387",
-  measurementId: "G-BK760T9XCW"
-};
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // State
 const studentId = ref("");
@@ -59,7 +45,7 @@ async function handleSubmit() {
   successMessage.value = "";
   loading.value = true;
 
-  const cleanStudentId = studentId.value.replace(/[^0-9]/g, ""); // เอาเฉพาะตัวเลข
+  const cleanStudentId = studentId.value.replace(/[^0-9]/g, "");
 
   if (cleanStudentId.length !== 10) {
     errorMessage.value = "กรุณาใส่รหัสนักศึกษาให้ครบ 10 ตัวเลข";
@@ -67,31 +53,18 @@ async function handleSubmit() {
     return;
   }
 
-  try {
-    const q = query(
-      collection(db, "users"),
-      where("studentIdClean", "==", cleanStudentId),
-      where("favoriteThing", "==", favoriteThing.value.trim())
-    );
-
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
+  // MOCK: ไม่เชื่อมต่อฐานข้อมูล
+  setTimeout(() => {
+    if (favoriteThing.value.trim() === "" || newPassword.value.trim() === "") {
       errorMessage.value = "ข้อมูลไม่ถูกต้อง กรุณาลองใหม่";
     } else {
-      const userDoc = snapshot.docs[0];
-      await updateDoc(userDoc.ref, { password: newPassword.value });
-
-      successMessage.value = "แก้ไขรหัสผ่านเรียบร้อยแล้ว!";
+      successMessage.value = "แก้ไขรหัสผ่านเรียบร้อยแล้ว! (mock)";
       studentId.value = "";
       favoriteThing.value = "";
       newPassword.value = "";
     }
-  } catch (err) {
-    errorMessage.value = "เกิดข้อผิดพลาด: " + err.message;
-  } finally {
     loading.value = false;
-  }
+  }, 1000);
 }
 </script>
 

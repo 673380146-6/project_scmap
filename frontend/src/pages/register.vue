@@ -47,22 +47,8 @@
 
 <script>
 import { ref } from "vue";
-import { getFirestore, collection, query, where, getDocs, addDoc } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
 
-// Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAmfunEqGUmZHabiPKYwCuay3JCRVXa_DU",
-  authDomain: "project-web-f9a73.firebaseapp.com",
-  projectId: "project-web-f9a73",
-  storageBucket: "project-web-f9a73.firebasestorage.app",
-  messagingSenderId: "809705005062",
-  appId: "1:809705005062:web:f4736c194fc7cf68c5e387",
-  measurementId: "G-BK760T9XCW"
-};
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 export default {
   name: "Register",
@@ -91,43 +77,18 @@ export default {
         return;
       }
 
-      try {
-        const q = query(
-          collection(db, "users"),
-          where("studentIdClean", "==", cleanStudentId)
-        );
-        const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-          errorMessage.value = "รหัสนักศึกษานี้มีอยู่แล้วในระบบ";
-        } else {
-          const data = {
-            fullName: fullName.value,
-            faculty: faculty.value,
-            major: major.value,
-            year: year.value,
-            studentId: studentId.value,
-            studentIdClean: cleanStudentId,
-            password: password.value,
-            favoriteThing: favoriteThing.value,
-            createdAt: new Date().toISOString()
-          };
-
-          await addDoc(collection(db, "users"), data);
-          successMessage.value = "สมัครเรียบร้อยแล้ว!";
-          fullName.value = "";
-          faculty.value = "";
-          major.value = "";
-          year.value = "";
-          studentId.value = "";
-          password.value = "";
-          favoriteThing.value = "";
-        }
-      } catch (error) {
-        errorMessage.value = "เกิดข้อผิดพลาด: " + error.message;
-      } finally {
+      // MOCK: ไม่เชื่อมต่อฐานข้อมูล
+      setTimeout(() => {
+        successMessage.value = "สมัครเรียบร้อยแล้ว! (mock)";
+        fullName.value = "";
+        faculty.value = "";
+        major.value = "";
+        year.value = "";
+        studentId.value = "";
+        password.value = "";
+        favoriteThing.value = "";
         loading.value = false;
-      }
+      }, 1000);
     };
 
     return {

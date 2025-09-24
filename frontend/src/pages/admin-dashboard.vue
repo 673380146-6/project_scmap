@@ -53,7 +53,7 @@
       <!-- Canvas -->
       <div v-if="view==='canvas'" class="canvas-area">
         <model-viewer
-          src="../models/cp09model.glb"
+          src="/frontend/public/models/cp09model.glb"
           alt="3D model"
           auto-rotate
           camera-controls
@@ -98,21 +98,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, doc } from "firebase/firestore";
 
-// Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAmfunEqGUmZHabiPKYwCuay3JCRVXa_DU",
-  authDomain: "project-web-f9a73.firebaseapp.com",
-  projectId: "project-web-f9a73",
-  storageBucket: "project-web-f9a73.appspot.com",
-  messagingSenderId: "809705005062",
-  appId: "1:809705005062:web:f4736c194fc7cf68c5e387",
-  measurementId: "G-BK760T9XCW"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
 
 // States
 const sidebarHover = ref(false);
@@ -159,35 +146,37 @@ function logoutUser() {
 }
 
 // Admin functions
-async function showAdminsTable() {
+function showAdminsTable() {
   view.value = "admins";
-  admins.value = [];
-  const snapshot = await getDocs(collection(db, "admin"));
-  admins.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  admins.value = [
+    { id: 1, user: "admin1" },
+    { id: 2, user: "admin2" }
+  ];
 }
-async function updateAdmin(id, value) {
-  const refDoc = doc(db, "admin", id);
-  await updateDoc(refDoc, { user: value });
+function updateAdmin(id, value) {
+  const admin = admins.value.find(a => a.id === id);
+  if (admin) admin.user = value;
 }
-async function addAdmin() {
-  await addDoc(collection(db, "admin"), { user: "ใหม่" });
-  showAdminsTable();
+function addAdmin() {
+  const newId = admins.value.length ? Math.max(...admins.value.map(a => a.id)) + 1 : 1;
+  admins.value.push({ id: newId, user: "ใหม่" });
 }
 
 // Users functions
-async function showUsersTable() {
+function showUsersTable() {
   view.value = "users";
-  users.value = [];
-  const snapshot = await getDocs(collection(db, "users"));
-  users.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  users.value = [
+    { id: 1, user: "user1" },
+    { id: 2, user: "user2" }
+  ];
 }
-async function updateUser(id, value) {
-  const refDoc = doc(db, "users", id);
-  await updateDoc(refDoc, { user: value });
+function updateUser(id, value) {
+  const user = users.value.find(u => u.id === id);
+  if (user) user.user = value;
 }
-async function addUser() {
-  await addDoc(collection(db, "users"), { user: "ใหม่" });
-  showUsersTable();
+function addUser() {
+  const newId = users.value.length ? Math.max(...users.value.map(u => u.id)) + 1 : 1;
+  users.value.push({ id: newId, user: "ใหม่" });
 }
 
 // Close settings when click outside

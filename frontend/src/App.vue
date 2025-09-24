@@ -2,38 +2,19 @@
 import { ref } from 'vue'
 import My3DViewer from './components/My3DViewer.vue'
 
-// state เพื่อควบคุมว่าเลือกอะไร
 const selected = ref(null)
+function goToLogin() {
+  const bg = document.getElementById('welcome')
+  bg.classList.add('exit')
+  setTimeout(() => {
+    // ใช้ router จาก context
+    window.location.href = '/login'
+  }, 800)
+}
 </script>
 
 <template>
-  <div class="container">
-    <h1>SCIENCE MAP</h1>
-
-    <!-- ปุ่มเมนูจำลอง -->
-    <div class="menu">
-      <button @click="selected = 'SC01'">SC01</button>
-      <button @click="selected = 'SC02'">SC02</button>
-      <button @click="selected = 'FOOD'">ศูนย์อาหาร</button>
-    </div>
-
-    <!-- แสดง 3D Viewer เมื่อเลือก SC01 -->
-    <div v-if="selected === 'SC01'">
-      <My3DViewer modelPath="/models/webmodel.obj.glb" />
-    </div>
-
-    <!-- กรณีเลือกอย่างอื่น -->
-    <div v-else-if="selected === 'SC02'">
-      <p>SC02: ยังไม่มีโมเดล</p>
-    </div>
-    <div v-else-if="selected === 'FOOD'">
-      <p>ศูนย์อาหาร: รหัส 09</p>
-    </div>
-
-    <div v-else>
-      <p>← กรุณาเลือกเมนู</p>
-    </div>
-  </div>
+  <router-view />
 </template>
 
 <style scoped>
