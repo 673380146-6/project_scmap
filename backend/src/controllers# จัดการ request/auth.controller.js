@@ -53,3 +53,21 @@ export const register = async (req, res, next) => {
     next(err);
   }
 };
+
+// Logout
+export const logout = (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token) {
+      const error = new Error("Token not found");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    authService.logout(token);
+    return success(res, null, "Logout successful");
+  } catch (err) {
+    next(err);
+  }
+};
