@@ -1,21 +1,22 @@
 import { Router } from 'express';
 import * as userController from '../controllers/user.controller.js';
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
 // GET /users → ดึง user ทั้งหมด
-router.get('/', userController.getUsers);
+router.get('/',authMiddleware, userController.getUsers);
 
 // GET /users/:id → ดึง user ตาม id
-router.get('/:id', userController.getUserById);
+router.get('/:id',authMiddleware, userController.getUserById);
 
 // POST /users → สร้าง user ใหม่
-router.post('/', userController.createUser);
+router.post('/',authMiddleware, userController.createUser);
 
 // PUT /users/:id → อัปเดต user
-router.put('/:id', userController.updateUser);
+router.put('/:id',authMiddleware, userController.updateUser);
 
 // DELETE /users/:id → ลบ user
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id',authMiddleware, userController.deleteUser);
 
 export default router;
