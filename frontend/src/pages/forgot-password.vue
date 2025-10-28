@@ -1,27 +1,29 @@
 <template>
-  <div class="form">
-    <h2>แก้ไขรหัสผ่าน</h2>
+  <div class="page-container">
+    <div class="form">
+      <h2>แก้ไขรหัสผ่าน</h2>
 
-    <form @submit.prevent="handleSubmit">
-      <label>รหัสนักศึกษา</label>
-      <input v-model="studentId" type="text" placeholder="เช่น 6430XXXXXX" required />
+      <form @submit.prevent="handleSubmit">
+        <label>รหัสนักศึกษา</label>
+        <input v-model="studentId" type="text" placeholder="เช่น 6430XXXXXX" required />
 
-      <label>สิ่งที่คุณชอบ</label>
-      <input v-model="favoriteThing" type="text" placeholder="เช่น หนังสือ, หมา, กระเป๋า..." required />
+        <label>สิ่งที่คุณชอบ</label>
+        <input v-model="favoriteThing" type="text" placeholder="เช่น หนังสือ, หมา, กระเป๋า..." required />
 
-      <label>รหัสผ่านใหม่</label>
-      <input v-model="newPassword" type="password" placeholder="รหัสผ่านใหม่" required />
+        <label>รหัสผ่านใหม่</label>
+        <input v-model="newPassword" type="password" placeholder="รหัสผ่านใหม่" required />
 
-      <button type="submit" class="button-submit" :disabled="loading">
-        {{ loading ? "กำลังตรวจสอบ..." : "ยืนยันการแก้ไข" }}
-      </button>
-    </form>
+        <button type="submit" class="button-submit" :disabled="loading">
+          {{ loading ? "กำลังตรวจสอบ..." : "ยืนยันการแก้ไข" }}
+        </button>
+      </form>
 
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
 
-    <div class="text-center">
-      <router-link to="/login">กลับไปหน้าเข้าสู่ระบบ</router-link>
+      <div class="text-center">
+        <router-link to="/login">กลับไปหน้าเข้าสู่ระบบ</router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -29,9 +31,6 @@
 <script setup>
 import { ref } from "vue";
 
-
-
-// State
 const studentId = ref("");
 const favoriteThing = ref("");
 const newPassword = ref("");
@@ -39,7 +38,6 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const loading = ref(false);
 
-// ฟังก์ชันกดปุ่ม Reset Password
 async function handleSubmit() {
   errorMessage.value = "";
   successMessage.value = "";
@@ -53,7 +51,6 @@ async function handleSubmit() {
     return;
   }
 
-  // MOCK: ไม่เชื่อมต่อฐานข้อมูล
   setTimeout(() => {
     if (favoriteThing.value.trim() === "" || newPassword.value.trim() === "") {
       errorMessage.value = "ข้อมูลไม่ถูกต้อง กรุณาลองใหม่";
@@ -69,14 +66,12 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-body {
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #f5f5f5;
+.page-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100vh; /* เต็มจอ */
+  background-color: #f5f5f5;
 }
 
 .form {

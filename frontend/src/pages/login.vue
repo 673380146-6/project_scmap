@@ -1,69 +1,92 @@
 <template>
-  <form class="form" @submit.prevent="login">
-    <h2>ขอต้อนรับกลับมา</h2>
+  <div class="page-container">
+    <form class="form" @submit.prevent="login">
+      <h2>ขอต้อนรับกลับมา</h2>
 
-    <label>รหัสนักศึกษา</label>
-    <input v-model="username" type="text" placeholder="เช่น 6430XXXXXX" required />
+      <label>รหัสนักศึกษา</label>
+      <input v-model="username" type="text" placeholder="เช่น 6430XXXXXX" required />
 
-    <label>รหัสผ่าน</label>
-    <input v-model="password" type="password" placeholder="รหัสผ่าน" required />
+      <label>รหัสผ่าน</label>
+      <input v-model="password" type="password" placeholder="รหัสผ่าน" required />
 
-    <button type="submit" class="button-submit">ดำเนินการต่อ</button>
+      <button type="submit" class="button-submit" :disabled="loading">
+        {{ loading ? "กำลังเข้าสู่ระบบ..." : "ดำเนินการต่อ" }}
+      </button>
 
-    <div class="text-center">
-      <router-link to="/forgot-password" class="forgot">ลืมรหัสผ่าน?</router-link>
-    </div>
+      <div class="text-center">
+        <router-link to="/forgot-password" class="forgot">ลืมรหัสผ่าน?</router-link>
+      </div>
 
-    <div class="text-center">
-      ยังไม่มีบัญชีใช่ไหม? <router-link to="/register">ลงชื่อสมัคร</router-link>
-    </div>
-  </form>
+      <div class="text-center">
+        ยังไม่มีบัญชีใช่ไหม? <router-link to="/register">ลงชื่อสมัคร</router-link>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script>
-// ใช้ Firebase SDK ของ Vue (ติดตั้ง firebase ก่อน: npm install firebase)
-
-
+import { ref } from "vue";
+import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { getApp } from "firebase/app";
 
 export default {
   name: "LoginPage",
-  data() {
-    return {
-      username: "",
-      password: ""
-    };
-  },
-  methods: {
-    login() {
-      // MOCK: ให้ login สำเร็จเสมอ (ไม่เชื่อมต่อฐานข้อมูล)
-      if (this.username === 'admin') {
-        localStorage.setItem("role", "admin");
-        localStorage.setItem("adminID", "mock-admin-id");
-        alert("เข้าสู่ระบบในฐานะผู้ดูแลระบบสำเร็จ!");
-        this.$router.push("/admin-dashboard");
-      } else {
-        localStorage.setItem("role", "user");
-        localStorage.setItem("fullName", this.username || "ไม่ระบุชื่อ");
-        localStorage.setItem("faculty", "ไม่ระบุคณะ");
-        localStorage.setItem("major", "-");
-        alert("เข้าสู่ระบบสำเร็จ!");
-        this.$router.push("/map");
+  setup(_, { router }) {
+    const username = ref("");
+    const password = ref("");
+    const loading = ref(false);
+
+    const login = async () => {
+      loading.value = true;
+      const db = getFirestore(getApp());
+      const usernameInput = username.value.trim();
+
+      try {
+        // เช็คว่าเป็น admin
+        const adminQuery = query(collection(db, "admin"), where("user", "==", usernameInput));
+        const adminSnapshot = await getDocs(adminQuery);
+
+        if (!adminSnapshot.empty) {
+          // Admin
+          localStorage.setItem("role", "admin");
+          localStorage.setItem("adminID", adminSnapshot.docs[0].id);
+          alert("เข้าสู่ระบบในฐานะผู้ดูแลระบบสำเร็จ!");
+          router.push("/admin-dashboard");
+        } else {
+          // User ปกติ
+          localStorage.setItem("role", "user");
+          localStorage.setItem("fullName", usernameInput || "ไม่ระบุชื่อ");
+          localStorage.setItem("faculty", "ไม่ระบุคณะ");
+          localStorage.setItem("major", "-");
+          alert("เข้าสู่ระบบสำเร็จ!");
+          router.push("/map");
+        }
+      } catch (e) {
+        alert("เกิดข้อผิดพลาด: " + e.message);
+      } finally {
+        loading.value = false;
       }
-    }
+    };
+
+    return {
+      username,
+      password,
+      login,
+      loading
+    };
   }
 };
 </script>
 
 <style scoped>
-body {
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #f5f5f5;
+.page-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  background-color: #f5f5f5;
 }
+
 .form {
   background-color: white;
   padding: 40px;
@@ -71,6 +94,7 @@ body {
   width: 400px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 }
+
 .form h2 { text-align: center; margin-bottom: 30px; }
 label { font-weight: bold; display: block; margin: 15px 0 5px; }
 input {

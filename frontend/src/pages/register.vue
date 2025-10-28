@@ -1,5 +1,5 @@
 <template>
-  <div class="form-container">
+  <div class="page-container">
     <form class="form" @submit.prevent="registerUser">
       <h2>สมัครสมาชิก</h2>
 
@@ -48,8 +48,6 @@
 <script>
 import { ref } from "vue";
 
-
-
 export default {
   name: "Register",
   setup() {
@@ -70,14 +68,13 @@ export default {
       loading.value = true;
 
       const cleanStudentId = studentId.value.replace(/[^0-9]/g, "");
-
       if (cleanStudentId.length !== 10) {
         errorMessage.value = "กรุณาใส่รหัสนักศึกษาให้ครบ 10 ตัวอักษร (เฉพาะตัวเลข)";
         loading.value = false;
         return;
       }
 
-      // MOCK: ไม่เชื่อมต่อฐานข้อมูล
+      // MOCK
       setTimeout(() => {
         successMessage.value = "สมัครเรียบร้อยแล้ว! (mock)";
         fullName.value = "";
@@ -109,14 +106,12 @@ export default {
 </script>
 
 <style scoped>
-body {
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #f5f5f5;
+.page-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100vh; /* จัดเต็มจอ */
+  background-color: #f5f5f5;
 }
 
 .form {
