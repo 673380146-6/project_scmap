@@ -22,24 +22,23 @@
         >
           <span class="icon">{{ item.icon }}</span>
           <span class="label">{{ item.label }}</span>
-        </li>
 
-        <div
-          v-for="item in menuItems"
-          v-if="item.submenu"
-          :key="item.name+'-submenu'"
-          class="submenu"
-          :class="{ open: openSubmenus.includes(item.name) }"
-        >
+          <!-- render submenu inside its parent li to keep valid HTML structure -->
           <div
-            v-for="sub in item.submenu"
-            :key="sub"
-            class="sub-item"
-            @click.stop="showCanvas(sub)"
+            v-if="item.submenu"
+            class="submenu"
+            :class="{ open: openSubmenus.includes(item.name) }"
           >
-            {{ sub }}
+            <div
+              v-for="sub in item.submenu"
+              :key="item.name + '-' + sub"
+              class="sub-item"
+              @click.stop="showCanvas(sub)"
+            >
+              {{ sub }}
+            </div>
           </div>
-        </div>
+        </li>
       </ul>
     </aside>
 
@@ -69,7 +68,7 @@
 
       <div v-show="adminsVisible">
         <h3>รายชื่อแอดมิน (Admins)</h3>
-        <button @click="addAdmin" style="margin-bottom:10px; background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px;">➕ เพิ่มแอดมิน</button>
+        <button class="btn primary" @click="addAdmin">➕ เพิ่มแอดมิน</button>
         <table>
           <thead>
             <tr><th>ชื่อผู้ใช้</th></tr>
@@ -84,7 +83,7 @@
 
       <div v-show="usersVisible">
         <h3>รายชื่อผู้สมัคร (Users)</h3>
-        <button @click="addUser" style="margin-bottom:10px; background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px;">➕ เพิ่มผู้สมัคร</button>
+        <button class="btn primary" @click="addUser">➕ เพิ่มผู้สมัคร</button>
         <table>
           <thead>
             <tr><th>ชื่อผู้ใช้</th></tr>
@@ -221,4 +220,71 @@ onMounted(()=>{
 <style scoped>
 /* ย้าย CSS ของคุณมาทั้งหมด unchanged */
  /* ใส่ CSS ที่คุณมีทั้งหมดตรงนี้ */
+</style>
+
+<style scoped>
+.container{
+  --bg: #ffffff;
+  --text: #0b1220; /* very dark */
+  --muted: #6b7280;
+  --surface: #ffffff;
+  --accent: #0b84ff; /* bright blue */
+  display:flex;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+.sidebar{
+  width:260px;
+  border-right:1px solid #eef2f7;
+  padding:20px 16px;
+  box-sizing:border-box;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+}
+.brand{ display:flex; align-items:center; gap:12px; margin-bottom:18px }
+.brand .logo{ width:44px; height:44px; border-radius:10px; background:var(--text); color:white; display:flex; align-items:center; justify-content:center; font-weight:700 }
+.brand .label{ font-weight:700; letter-spacing:0.6px }
+.search-box{ display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; background:#f5f7fb; margin-bottom:14px }
+.search-box input{ border:0; outline:none; background:transparent; width:100%; color:var(--text); font-size:14px }
+.menu-list{ list-style:none; padding:0; margin:0 }
+.menu-item{ display:flex; align-items:center; gap:10px; padding:10px 8px; border-radius:8px; cursor:pointer; color:var(--text); transition:background .15s, color .15s }
+.menu-item:hover{ background:#f0f6ff }
+.menu-item .icon{ font-size:18px }
+.menu-item .label{ font-size:14px }
+.submenu{ margin-top:6px; margin-left:34px; overflow:hidden; max-height:0; transition:max-height .25s ease }
+.submenu.open{ max-height:200px }
+.sub-item{ padding:6px 10px; border-radius:6px; color:var(--muted); font-size:13px; cursor:pointer }
+.sub-item:hover{ background:#f0f6ff; color:var(--text) }
+
+.main{ flex:1; padding:20px; position:relative }
+.top-bar{ display:flex; align-items:center; justify-content:flex-start; gap:12px; position:relative; padding:6px 40px 12px 0 }
+.top-bar .title{ font-size:18px; font-weight:700 }
+
+.settings{ position:absolute; top:12px; right:18px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:8px; cursor:pointer }
+.settings svg{ width:22px; height:22px; fill:var(--muted) }
+.settings:hover svg{ fill:var(--text) }
+.settings-menu{ position:absolute; right:0; top:54px; background:var(--surface); border:1px solid #eef2f7; box-shadow:0 8px 20px rgba(11,18,32,0.06); min-width:220px; padding:12px; border-radius:8px; display:none }
+.settings.active .settings-menu{ display:block }
+.settings-menu .profile-info .name{ font-weight:700 }
+.settings-menu .faculty-major{ font-size:13px; color:var(--muted); margin-top:4px }
+.settings-menu .logout{ display:inline-block; margin-top:10px; color:var(--accent); text-decoration:none }
+
+.canvas-area{ border-radius:8px; border:1px solid #eef4ff; padding:12px; min-height:420px; background: linear-gradient(180deg, #ffffff, #fbfdff) }
+
+h3{ margin-top:14px; margin-bottom:8px }
+table{ width:100%; border-collapse:collapse; margin-top:8px }
+thead th{ text-align:left; padding:8px 10px; color:var(--muted); font-size:13px }
+tbody td{ padding:10px; border-top:1px solid #f1f5f9 }
+
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; border:1px solid transparent; cursor:pointer; margin-bottom:10px }
+.btn.primary{ background:var(--accent); color:white }
+.btn.ghost{ background:transparent; border-color:#eef2f7; color:var(--text) }
+
+/* responsive adjustments */
+@media (max-width:800px){
+  .sidebar{ display:none }
+  .main{ padding:12px }
+  .settings{ right:12px }
+}
 </style>
