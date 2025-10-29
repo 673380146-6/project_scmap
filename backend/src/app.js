@@ -9,6 +9,7 @@ import authRoutes from './routes_API/auth.router.js';
 
 // middleware (error handler)
 import { errorHandler } from './middlewares/errorHandler.js';
+import verifyFirebaseToken from './middlewares/firebase-auth.middleware.js';
 
 const app = express();
 
