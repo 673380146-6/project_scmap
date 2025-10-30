@@ -3,21 +3,21 @@
     <!-- Navbar -->
     <nav class="navbar">
       <div class="menu-item">
-        แผนที่
+        <a href="#" class="nav-link">แผนที่</a>
         <div class="submenu">
           <a href="#">คณะวิทยาศาสตร์</a>
           <a href="#">ตึกเรียนรวม</a>
         </div>
       </div>
       <div class="menu-item">
-        เกี่ยวกับ
+        <a href="#" class="nav-link">เกี่ยวกับ</a>
         <div class="submenu">
           <a href="#">ทีมพัฒนา</a>
           <a href="#">ข้อมูลระบบ</a>
         </div>
       </div>
       <div class="menu-item">
-        ติดต่อ
+        <a href="#" class="nav-link">ติดต่อ</a>
         <div class="submenu">
           <a href="#">Facebook</a>
           <a href="#">อีเมล</a>
@@ -94,6 +94,16 @@ body {
 .navbar > .menu-item {
   position: relative;
   cursor: pointer;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #667eea;
 }
 
 .navbar .submenu {
