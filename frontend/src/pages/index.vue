@@ -3,24 +3,24 @@
     <!-- Navbar -->
     <nav class="navbar">
       <div class="menu-item">
-        <a href="#" class="nav-link">แผนที่</a>
+        <a href="#" class="nav-link"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">แผนที่</a>
         <div class="submenu">
-          <a href="#">คณะวิทยาศาสตร์</a>
-          <a href="#">ตึกเรียนรวม</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">คณะวิทยาศาสตร์</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">ตึกเรียนรวม</a>
         </div>
       </div>
       <div class="menu-item">
-        <a href="#" class="nav-link">เกี่ยวกับ</a>
+        <a href="#" class="nav-link"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">เกี่ยวกับ</a>
         <div class="submenu">
-          <a href="#">ทีมพัฒนา</a>
-          <a href="#">ข้อมูลระบบ</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">ทีมพัฒนา</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">ข้อมูลระบบ</a>
         </div>
       </div>
       <div class="menu-item">
-        <a href="#" class="nav-link">ติดต่อ</a>
+        <a href="#" class="nav-link"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">ติดต่อ</a>
         <div class="submenu">
-          <a href="#">Facebook</a>
-          <a href="#">อีเมล</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">Facebook</a>
+          <a href="#"style="font-family: 'Mitr', 'Noto Sans Thai', sans-serif;">อีเมล</a>
         </div>
       </div>
     </nav>
@@ -34,7 +34,7 @@
       <!-- Curved text using SVG -->
       <svg viewBox="0 0 1000 200">
         <defs>
-          <path id="curve" d="M100,150 Q500,20 900,150" fill="transparent" />
+          <path id="curve" d="M00,150 Q500,20 1000,150" fill="transparent" />
         </defs>
         <text text-anchor="middle">
           <textPath href="#curve" startOffset="50%">
@@ -69,6 +69,8 @@ export default {
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;600&display=swap');
+
 html,
 body {
   margin: 0;
@@ -133,7 +135,7 @@ body {
 
 /* Background block */
 .full-background {
-  background: url("welcome2.jpg") no-repeat center center / cover;
+  background: url("https://kku.ac.th/wp-content/uploads/2025/02/03-3000x1286-2-scaled.jpg") no-repeat center center / cover;
   width: 100%;
   height: 100vh;
   display: flex;

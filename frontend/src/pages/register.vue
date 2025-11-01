@@ -38,7 +38,7 @@
           @click="togglePasswordVisibility"
           :title="showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
         >
-          {{ showPassword ? '🙈' : '👁️' }}
+          {{ showPassword ? '⌣' : '👁' }}
         </button>
       </div>
 
@@ -174,6 +174,12 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;600&display=swap');
+
+* {
+  font-family: 'Mitr', 'Noto Sans Thai', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
 .page-container {
   display: flex;
   justify-content: center;
