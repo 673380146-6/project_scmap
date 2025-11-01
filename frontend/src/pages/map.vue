@@ -106,6 +106,7 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import apiService from '@/services/api.js'
+import ModelViewer from '@/components/ModelViewer.vue'
 
 // Firebase config
 const firebaseConfig = {
@@ -131,9 +132,15 @@ const defaultProfilePic = 'default-profile.png'
 const studentId = ref('')
 const isLoadingUserData = ref(true)
 
+// components registry
+const components = {
+  ModelViewer
+}
+
 // computed properties
 const currentCanvasComponent = computed(() => {
-  return canvasComponents[currentCanvas.value] || 'ModelViewer'
+  const componentName = canvasComponents[currentCanvas.value] || 'ModelViewer'
+  return components[componentName] || ModelViewer
 })
 
 const displayName = computed(() => {
