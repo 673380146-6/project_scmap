@@ -84,7 +84,7 @@ export default {
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value;
     };
-
+    
     const registerUser = async () => {
       errorMessage.value = "";
       successMessage.value = "";
