@@ -2,33 +2,28 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
-// routes
+import authRoutes from './routes_API/auth.routes.js';
 import userRoutes from './routes_API/users.routes.js';
-import authRoutes from './routes_API/auth.router.js';
-
-// middleware (error handler)
-import { errorHandler } from './middlewares/errorHandler.js';
-import verifyFirebaseToken from './middlewares/firebase-auth.middleware.js';
+import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
 
-// middleware
+// Middleware
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 
-// test route
+// Test route
 app.get('/', (req, res) => {
-  res.json({ message: 'Backend is running 🚀' });
+  res.json({ message: 'Backend is running 🚀 with Firebase' });
 });
 
-// api routes
-app.use('/api/v1/users', userRoutes);
+// Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
 
-// error handler (ไว้ล่างสุด)
-app.use(errorHandler);
+// Error handler
+app.use(errorMiddleware);
 
 export default app;

@@ -1,4 +1,5 @@
-const admin = require('../config/firebase-admin');
+import admin from '../config/firebase-admin.js';
+
 const db = admin.firestore();
 
 const FirestoreService = {
@@ -52,6 +53,19 @@ const FirestoreService = {
     }
   },
 
+  // Get all documents from a collection
+  async getAll(collection) {
+    try {
+      const snapshot = await db.collection(collection).get();
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Query documents
   async query(collection, queries = []) {
     try {
@@ -72,4 +86,4 @@ const FirestoreService = {
   }
 };
 
-module.exports = FirestoreService;
+export default FirestoreService;
