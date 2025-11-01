@@ -62,30 +62,32 @@
           <span class="icon">🛵</span>
           <span class="label">ที่จอดรถมอไซค์</span>
         </li>
+        
       </ul>
     </aside>
 
     <main class="main">
       <div class="top-bar">
-        <div class="title">{{ userDisplayName }}</div>
+        <div class="welcome-section">
+          <div class="title">Science Map</div>
+          <div class="user-welcome" v-if="displayName">
+            <span>สวัสดีคุณ {{ displayName }}</span>
+          </div>
+        </div>
         <div class="settings" :class="{ active: settingsOpen }" @click.stop="toggleSettingsMenu">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm7.43-3.5c0-.36-.03-.72-.08-1.07l2.11-1.65a.5.5 0 0 0 .12-.65l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.16 7.16 0 0 0-1.84-1.07L14.5 2.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5l-.24 2.88a7.16 7.16 0 0 0-1.84 1.07l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.65l2.11 1.65c-.05.35-.08.71-.08 1.07s.03.72.08 1.07l-2.11 1.65a.5.5 0 0 0-.12.65l2 3.46a.5.5 0 0 0 .61.22l2.49-1a7.16 7.16 0 0 0 1.84 1.07L9.5 21.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5l.24-2.88a7.16 7.16 0 0 0 1.84-1.07l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.65l-2.11-1.65c.05-.35.08-.71.08-1.07z"
-            />
-          </svg>
-          <div class="settings-menu">
+          <div class="profile-preview">
+            <img v-if="user.profilePic" :src="user.profilePic" alt="profile" class="profile-mini" />
+            <span v-else class="icon-setting">👱🏻‍♂️</span>
+          </div>
+          <div class="settings-menu" @click.stop="preventClose">
             <div class="profile-info">
-              <img :src="user.profilePic || defaultProfilePic" alt="profile" />
               <div class="name">{{ user.fullName || 'ชื่อ นามสกุล' }}</div>
               <div class="faculty-major">{{ user.facultyMajor || 'คณะของคุณ | สาขาของคุณ' }}</div>
+              <div class="student-id" v-if="studentId">
+                รหัส: {{ studentId }}
+              </div>
             </div>
-            <div style="padding:10px; border-bottom:1px solid #ddd;">
-              <input type="file" accept="image/*" @change="uploadProfilePic" style="margin-bottom:8px;" />
-              <button @click="editProfile" style="width:100%; padding:8px; border:none; border-radius:8px; background:#f1f4f9; cursor:pointer; font-weight:600;">
-                ✏️ แก้ไขข้อมูล
-              </button>
-            </div>
+
             <a href="index.html" class="logout" @click.prevent="logoutUser">ออกจากระบบ</a>
           </div>
         </div>
@@ -99,10 +101,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { initializeApp } from 'firebase/app'
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import apiService from '@/services/api.js'
 
 // Firebase config
 const firebaseConfig = {
@@ -122,9 +125,20 @@ const storage = getStorage(app)
 const searchQuery = ref('')
 const submenuOpen = ref(false)
 const settingsOpen = ref(false)
-const user = ref({ fullName: '', facultyMajor: '', profilePic: '' })
+const user = ref({ fullName: '', facultyMajor: 'กำลังโหลดข้อมูล...', profilePic: '' })
 const currentCanvas = ref('modelViewer')  // default component name
 const defaultProfilePic = 'default-profile.png'
+const studentId = ref('')
+const isLoadingUserData = ref(true)
+
+// computed properties
+const currentCanvasComponent = computed(() => {
+  return canvasComponents[currentCanvas.value] || 'ModelViewer'
+})
+
+const displayName = computed(() => {
+  return user.value.fullName || 'ผู้ใช้'
+})
 
 // mapping name to component names — ต้องมี component จริงในโปรเจกต์ของคุณ
 const canvasComponents = {
@@ -166,53 +180,95 @@ function toggleSettingsMenu() {
   settingsOpen.value = !settingsOpen.value
 }
 
-function logoutUser() {
-  localStorage.clear()
-  window.location.href = 'index.html'
+// ปิดเมนูเมื่อคลิกข้างนอก
+function closeSettingsMenu() {
+  settingsOpen.value = false
 }
 
-async function uploadProfilePic(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  const userId = localStorage.getItem('userId') || 'currentUser'
-  const sRef = storageRef(storage, `profiles/${userId}-${file.name}`)
-  await uploadBytes(sRef, file)
-  const url = await getDownloadURL(sRef)
-  user.value.profilePic = url
-  await setDoc(doc(db, 'users', userId), { profilePic: url }, { merge: true })
+// ป้องกันการปิดเมนูเมื่อคลิกภายในเมนู
+function preventClose(event) {
+  event.stopPropagation()
 }
 
-async function editProfile() {
-  const newName = prompt('กรอกชื่อ-นามสกุลใหม่:', user.value.fullName)
-  const newFaculty = prompt('กรอกคณะ | สาขาใหม่:', user.value.facultyMajor)
-  if (newName && newFaculty) {
-    user.value.fullName = newName
-    user.value.facultyMajor = newFaculty
-    const userId = localStorage.getItem('userId') || 'currentUser'
-    await setDoc(doc(db, 'users', userId), {
-      fullName: newName,
-      facultyMajor: newFaculty
-    }, { merge: true })
+async function logoutUser() {
+  try {
+    await apiService.logout()
+  } catch (error) {
+    console.log('Logout API error:', error)
+  } finally {
+    // ล้าง localStorage และเปลี่ยนหน้า
+    localStorage.clear()
+    window.location.href = '/'
   }
 }
 
+
+
+
+
 onMounted(async () => {
-  const userId = localStorage.getItem('userId') || 'currentUser'
-  const docSnap = await getDoc(doc(db, 'users', userId))
-  if (docSnap.exists()) {
-    const data = docSnap.data()
+  // เพิ่ม event listener สำหรับปิดเมนู
+  document.addEventListener('click', closeSettingsMenu)
+  
+  // โหลดข้อมูลผู้ใช้จาก localStorage
+  const userId = localStorage.getItem('userId')
+  const userName = localStorage.getItem('userName')
+  const studentIdValue = localStorage.getItem('studentId')
+  const facultyValue = localStorage.getItem('faculty')
+  const majorValue = localStorage.getItem('major')
+  
+  studentId.value = studentIdValue || ''
+  
+  if (userId && userName) {
+    // ถ้ามีการล็อกอิน ใช้ข้อมูลจาก localStorage เป็นหลัก
+    const facultyText = facultyValue || 'ไม่ระบุคณะ'
+    const majorText = majorValue || 'ไม่ระบุสาขา'
+    
     user.value = {
-      fullName: data.fullName || '',
-      facultyMajor: data.facultyMajor || '',
-      profilePic: data.profilePic || ''
+      fullName: userName,
+      facultyMajor: `${facultyText} | ${majorText}`,
+      profilePic: ''
     }
+    
+    isLoadingUserData.value = false
+    console.log('Using localStorage data:', user.value)
+    
+    // ลองดึงข้อมูลจาก API เป็นตัวสำรอง (ถ้าต้องการ)
+    try {
+      const userResponse = await apiService.getUserById(userId)
+      if (userResponse && userResponse.success && userResponse.data) {
+        const userData = userResponse.data
+        console.log('API data available, updating if needed')
+        
+        // อัพเดทข้อมูลถ้า API มีข้อมูลที่ใหม่กว่า
+        if (userData.faculty && userData.major) {
+          user.value.facultyMajor = `${userData.faculty} | ${userData.major}`
+          console.log('Updated from API:', user.value)
+        }
+      }
+    } catch (error) {
+      console.log('API fallback failed, using localStorage data:', error.message)
+    }
+    
+  } else {
+    // ถ้าไม่ได้ล็อกอิน ใช้ข้อมูลเริ่มต้น
+    user.value = {
+      fullName: 'ผู้ใช้ระบบ',
+      facultyMajor: 'กรุณาล็อกอินเพื่อดูข้อมูล',
+      profilePic: ''
+    }
+    isLoadingUserData.value = false
   }
 })
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;600&display=swap');
+.icon-setting {
+  font-size: 30px;
+}
 :root {
-  --bg: #f6f8fb;
+  --bg: #f5f5f5;
   --panel: #ffffff;
   --panel-2: #f1f4f9;
   --panel-3: #e8edf5;
@@ -228,7 +284,7 @@ onMounted(async () => {
   --shadow:0 4px 20px rgba(0,0,0,.08);
 }
 *{ box-sizing: border-box; }
-html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans Thai", "Prompt", sans-serif; color: var(--text); background: var(--bg); }
+html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif; color: var(--text); background: var(--bg); }
 .container { height:100vh; width:100vw; display:flex; gap:0; }
 
 /* Sidebar */
@@ -335,39 +391,63 @@ html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: space-between; /* ดัน title ไปซ้าย, settings ไปขวา */
+  justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 15px 25px;
   position: relative;
   background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   z-index: 10;
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .title {
   font-weight: 800;
-  font-size: 20px;
+  font-size: 22px;
   color: var(--text);
+  margin: 0;
+}
+
+.user-welcome {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.profile-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.profile-preview:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(31, 143, 255, 0.2);
+}
+
+.profile-mini {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .settings {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
   cursor: pointer;
-  width: 40px;
-  height: 40px;
-  z-index: 200;   /* ให้ปุ่มอยู่เหนือเมนู */
-}
-
-.settings:hover {
-  background: var(--hover);   /* hover จะเห็นว่าเป็นปุ่มจริง ๆ */
-}
-
-.settings svg {
-  width: 24px;
-  height: 24px;
-  fill: var(--text);
+  z-index: 200;
 }
 
 .settings-menu {
@@ -376,38 +456,87 @@ html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-
   top: 120%;
   right: 0;
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  min-width: 240px;
-  z-index: 100;  /* เมนูอยู่ล่างกว่าปุ่ม */
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  min-width: 280px;
+  z-index: 100;
+  overflow: hidden;
 }
 
 .settings.active .settings-menu {
   display: block;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settings-menu .profile-info {
-  padding:12px; text-align:center; border-bottom:1px solid #ddd;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #f3f4f6;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
+
 .settings-menu .profile-info img {
-  width:70px; height:70px; border-radius:50%;
-  object-fit: cover; margin-bottom:8px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 12px;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
 .settings-menu .profile-info .name {
-  font-weight:700; font-size:16px; color:#000;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1f2937;
+  margin-bottom: 4px;
 }
+
 .settings-menu .profile-info .faculty-major {
-  color:#555; font-size:13px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
+
+.settings-menu .profile-info .student-id {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .settings-menu .logout {
-  display:block; text-align:center;
-  padding:10px; background: var(--accent);
-  color:#fff; text-decoration:none; font-weight:700;
+  display: block;
+  text-align: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #374151;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  cursor: pointer;
 }
+
 .settings-menu .logout:hover {
-  background:#0f6fde;
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  transform: translateY(-1px);
 }
+
+
 
 .canvas-area {
   flex:1; border-radius:12px; border:1px dashed #ccc;

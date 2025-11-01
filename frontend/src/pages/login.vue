@@ -20,7 +20,7 @@
           @click="togglePasswordVisibility"
           :title="showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
         >
-          {{ showPassword ? '🙈' : '👁️' }}
+          {{ showPassword ? '👁' : '⌣' }}
         </button>
       </div>
 
@@ -101,6 +101,9 @@ export default {
           localStorage.setItem("userName", response.user.name);
           localStorage.setItem("studentId", response.user.studentId);
           localStorage.setItem("role", response.user.role);
+          localStorage.setItem("faculty", response.user.faculty || '');
+          localStorage.setItem("major", response.user.major || '');
+          localStorage.setItem("year", response.user.year || '');
 
           // เปลี่ยนไปหน้า map หรือ dashboard
           setTimeout(() => {
@@ -134,6 +137,12 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;600&display=swap');
+
+* {
+  font-family: 'Mitr', 'Noto Sans Thai', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
 .page-container {
   display: flex;
   justify-content: center;

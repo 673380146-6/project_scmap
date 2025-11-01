@@ -188,7 +188,10 @@ export const login = async (req, res) => {
         id: user.id,
         name: user.name,
         studentId: user.studentId,
-        role: user.role
+        role: user.role,
+        faculty: user.faculty,
+        major: user.major,
+        year: user.year
       }
     });
   } catch (error) {
