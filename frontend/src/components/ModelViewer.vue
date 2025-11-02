@@ -12,6 +12,8 @@
     <div class="navigation-hint" v-if="!isLoading">
       <p>🎯 ยินดีต้อนรับสู่ Science Map! ใช้เมาส์หมุนดูรอบๆ และซูมเข้า-ออกเพื่อสำรวจแผนที่</p>
     </div>
+
+
   </div>
 </template>
 
@@ -20,9 +22,12 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+// นำเข้า Three.js utilities
+import { createSquareBlock, createParkingArea } from '../utils/three/index.js'
 
 const viewerContainer = ref(null)
 const isLoading = ref(true)
+const showMotorcycleParkingZones = ref(false) // สำหรับเปิด/ปิดโซนจอดมอไซค์
 
 let scene, camera, renderer, controls, animationId
 
@@ -109,6 +114,14 @@ function loadMainMapModel() {
       const box = new THREE.Box3().setFromObject(model)
       const size = box.getSize(new THREE.Vector3()).length()
       const center = box.getCenter(new THREE.Vector3())
+      
+      // Log ข้อมูลขนาดโมเดลเพื่อช่วยปรับตำแหน่งโซนจอดรถ
+      console.log('Model bounding box:', {
+        min: { x: box.min.x, y: box.min.y, z: box.min.z },
+        max: { x: box.max.x, y: box.max.y, z: box.max.z },
+        size: { x: box.max.x - box.min.x, y: box.max.y - box.min.y, z: box.max.z - box.min.z },
+        center: { x: center.x, y: center.y, z: center.z }
+      })
       
       // ปรับขนาดให้เหมาะสม
       const maxSize = 50 // ขนาดสูงสุดที่ต้องการ
@@ -208,7 +221,130 @@ function createFallbackModel() {
   console.log('Fallback model created')
 }
 
+// ฟังก์ชันสำหรับเปิด/ปิดโซนจอดรถมอเตอร์ไซค์
+function toggleMotorcycleParkingZones() {
+  showMotorcycleParkingZones.value = !showMotorcycleParkingZones.value
+  
+  if (showMotorcycleParkingZones.value) {
+    createMotorcycleParkingZones()
+  } else {
+    removeMotorcycleParkingZones()
+  }
+}
 
+// ฟังก์ชันสำหรับสร้างโซนจอดรถมอเตอร์ไซค์
+function createMotorcycleParkingZones() {
+  console.log('Creating motorcycle parking zones...')
+  
+  // กำหนดโซนจอดรถมอเตอร์ไซค์ในตำแหน่งที่เหมาะสม (ปรับตามขนาดโมเดลจริง)
+  const motorcycleParkingAreas = [
+    {
+      name: 'Motorcycle Zone 1 - หน้าตึก SC01',
+      corners: [
+        new THREE.Vector3(-15, 0, 10),
+        new THREE.Vector3(-10, 0, 10),
+        new THREE.Vector3(-10, 0, 15),
+        new THREE.Vector3(-15, 0, 15)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    },
+    {
+      name: 'Motorcycle Zone 2 - หน้าตึก SC08', 
+      corners: [
+        new THREE.Vector3(8, 0, 5),
+        new THREE.Vector3(13, 0, 5),
+        new THREE.Vector3(13, 0, 10),
+        new THREE.Vector3(8, 0, 10)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    },
+    {
+      name: 'Motorcycle Zone 3 - หน้าตึก SC09',
+      corners: [
+        new THREE.Vector3(-5, 0, -20),
+        new THREE.Vector3(5, 0, -20),
+        new THREE.Vector3(5, 0, -15),
+        new THREE.Vector3(-5, 0, -15)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    },
+    {
+      name: 'Motorcycle Zone 4 - ลานกลาง',
+      corners: [
+        new THREE.Vector3(-4, 0, -2),
+        new THREE.Vector3(4, 0, -2),
+        new THREE.Vector3(4, 0, 3),
+        new THREE.Vector3(-4, 0, 3)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    },
+    {
+      name: 'Motorcycle Zone 5 - ด้านข้างอาคาร A',
+      corners: [
+        new THREE.Vector3(-18, 0, -5),
+        new THREE.Vector3(-13, 0, -5),
+        new THREE.Vector3(-13, 0, 0),
+        new THREE.Vector3(-18, 0, 0)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    },
+    {
+      name: 'Motorcycle Zone 6 - ด้านข้างอาคาร B',
+      corners: [
+        new THREE.Vector3(10, 0, -8),
+        new THREE.Vector3(15, 0, -8),
+        new THREE.Vector3(15, 0, -3),
+        new THREE.Vector3(10, 0, -3)
+      ],
+      color: 0xff6b35, // สีส้ม
+      opacity: 0.6
+    }
+  ]
+  
+  // สร้างโซนจоดรถมอเตอร์ไซค์โดยใช้ createParkingArea utility
+  motorcycleParkingAreas.forEach((areaConfig, index) => {
+    const parkingZone = createParkingArea(areaConfig.corners, {
+      groundY: 0.05, // ยกขึ้นเล็กน้อยเพื่อไม่ให้ซ้อนกับพื้น
+      height: 0.15, // ลดความสูงให้ดูเป็นธรรมชาติ
+      color: areaConfig.color,
+      opacity: areaConfig.opacity
+    })
+    
+    // เพิ่ม metadata สำหรับการจัดการ
+    parkingZone.userData = {
+      isMotorcycleParkingZone: true,
+      zoneName: areaConfig.name,
+      zoneIndex: index
+    }
+    
+    scene.add(parkingZone)
+    console.log(`Created motorcycle parking zone: ${areaConfig.name}`)
+  })
+  
+  console.log('All motorcycle parking zones created!')
+}
+
+// ฟังก์ชันสำหรับลบโซนจอดรถมอเตอร์ไซค์
+function removeMotorcycleParkingZones() {
+  console.log('Removing motorcycle parking zones...')
+  
+  // หาและลบโซนจอดรถมอเตอร์ไซค์ทั้งหมด
+  const motorcycleParkingZones = scene.children.filter(child => 
+    child.userData && child.userData.isMotorcycleParkingZone
+  )
+  
+  motorcycleParkingZones.forEach(zone => {
+    scene.remove(zone)
+    console.log(`Removed motorcycle parking zone: ${zone.userData.zoneName}`)
+  })
+  
+  console.log('All motorcycle parking zones removed!')
+}
 
 function animate() {
   animationId = requestAnimationFrame(animate)
@@ -255,6 +391,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   cleanup()
+})
+
+// Export ฟังก์ชันให้ parent component เรียกใช้ได้
+defineExpose({
+  toggleMotorcycleParkingZones
 })
 </script>
 
@@ -329,6 +470,8 @@ onUnmounted(() => {
   font-weight: 500;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
+
+
 
 /* Responsive design */
 @media (max-width: 768px) {

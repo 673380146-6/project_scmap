@@ -17,7 +17,7 @@
         <li
           class="menu-item has-sub"
           v-show="matchesSearch('ตึกคณะ')"
-          @click.stop="toggleSubmenu"
+          @click.stop="handleBuildingClick"
         >
           <span class="icon">🏛</span>
           <span class="label">ตึกคณะ</span>
@@ -27,25 +27,9 @@
           :class="{ open: submenuOpen }"
         >
           <div class="sub-item" @click="showCanvas('SC01')">SC01</div>
-          <div class="sub-item" @click="showCanvas('SC02')">SC02</div>
-          <div class="sub-item" @click="showCanvas('SC03')">SC03</div>
+          <div class="sub-item" @click="showCanvas('SC08')">SC08</div>
+          <div class="sub-item" @click="showCanvas('SC09')">SC09</div>
         </div>
-        <li
-          class="menu-item"
-          v-show="matchesSearch('ศูนย์อาหาร')"
-          @click="showCanvas('ศูนย์อาหาร')"
-        >
-          <span class="icon">🍜</span>
-          <span class="label">ศูนย์อาหาร</span>
-        </li>
-        <li
-          class="menu-item"
-          v-show="matchesSearch('ตู้ & เต่าบิน')"
-          @click="showCanvas('ตู้ & เต่าบิน')"
-        >
-          <span class="icon">⚙️</span>
-          <span class="label">ตู้อาหาร & เต่าบิน</span>
-        </li>
         <li
           class="menu-item"
           v-show="matchesSearch('ที่จอดรถยนต์')"
@@ -94,7 +78,7 @@
       </div>
 
       <div class="canvas-area">
-        <component :is="currentCanvasComponent" />
+        <component :is="currentCanvasComponent" ref="currentCanvasRef" />
       </div>
     </main>
   </div>
@@ -107,6 +91,8 @@ import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestor
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import apiService from '@/services/api.js'
 import ModelViewer from '@/components/ModelViewer.vue'
+import CanvasSC01 from '@/components/CanvasSC01.vue'
+import CanvasSC09 from '@/components/CanvasSC09.vue'
 
 // Firebase config
 const firebaseConfig = {
@@ -131,10 +117,13 @@ const currentCanvas = ref('modelViewer')  // default component name
 const defaultProfilePic = 'default-profile.png'
 const studentId = ref('')
 const isLoadingUserData = ref(true)
+const currentCanvasRef = ref(null) // ref สำหรับ component ปัจจุบัน
 
 // components registry
 const components = {
-  ModelViewer
+  ModelViewer,
+  CanvasSC01,
+  CanvasSC09
 }
 
 // computed properties
@@ -151,12 +140,10 @@ const displayName = computed(() => {
 const canvasComponents = {
   modelViewer: 'ModelViewer',      // default 3D model component
   SC01: 'CanvasSC01',
-  SC02: 'CanvasSC02',
-  SC03: 'CanvasSC03',
-  'ศูนย์อาหาร': 'CanvasFoodCenter',
-  'ตู้ & เต่าบิน': 'CanvasVendingTurtle',
+  SC08: 'CanvasSC08',
+  SC09: 'CanvasSC09',
   'ที่จอดรถยนต์': 'CanvasCarParking',
-  'ที่จอดรถมอไซค์': 'CanvasMotorcycleParking'
+  'ที่จอดรถมอไซค์': 'ModelViewer' // ใช้ ModelViewer และจะ toggle โซนจอดรถ
 }
 
 function matchesSearch(name) {
@@ -178,8 +165,31 @@ function openSidebar() {
 function showCanvas(name) {
   if (canvasComponents[name]) {
     currentCanvas.value = name
+    
+    // ถ้าเป็นการเลือก "ที่จอดรถมอไซค์" ให้เรียก toggle function
+    if (name === 'ที่จอดรถมอไซค์') {
+      // รอให้ component โหลดเสร็จก่อนเรียก function
+      setTimeout(() => {
+        if (currentCanvasRef.value && currentCanvasRef.value.toggleMotorcycleParkingZones) {
+          currentCanvasRef.value.toggleMotorcycleParkingZones()
+          console.log('Toggled motorcycle parking zones from sidebar menu')
+        }
+      }, 100)
+    }
   } else {
     currentCanvas.value = 'modelViewer'
+  }
+}
+
+function handleBuildingClick() {
+  // ถ้า submenu ปิดอยู่ ให้เปิด submenu
+  if (!submenuOpen.value) {
+    toggleSubmenu()
+  } else {
+    // ถ้า submenu เปิดอยู่แล้ว ให้กลับไปหน้าแมพหลัก
+    submenuOpen.value = false
+    showCanvas('modelViewer')
+    console.log('กลับไปหน้าแมพหลัก')
   }
 }
 
