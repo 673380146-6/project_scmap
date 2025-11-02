@@ -45,7 +45,8 @@
     <!-- Main -->
     <main class="main">
       <div class="top-bar">
-        <div class="title">{{ user.fullName || "SCIENCE MAP" }}</div>
+        <div class="title">{{ user.fullName || "SCIENCE MAP ADMIN" }}</div>
+        <button class="logout-btn" @click="logoutUser">🚪 ออกจากระบบ</button>
         <div class="settings" :class="{ active: settingsActive }" @click.stop="toggleSettingsMenu">
           <svg viewBox="0 0 24 24">
             <path
@@ -101,8 +102,11 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
+import { useRouter } from 'vue-router';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, updateDoc, addDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const router = useRouter();
 
 const firebaseConfig = {
   apiKey: "AIzaSyAmfunEqGUmZHabiPKYwCuay3JCRVXa_DU",
@@ -205,8 +209,14 @@ function showCanvas(name) {
 
 // Logout
 function logoutUser() {
+  // ล้างข้อมูลที่เก็บใน localStorage
   localStorage.clear();
-  window.location.href="index.html";
+  
+  // แสดงข้อความแจ้งเตือน
+  alert('ออกจากระบบสำเร็จ');
+  
+  // นำทางไปหน้า login
+  router.push('/login');
 }
 
 // Load user info from localStorage
@@ -258,8 +268,26 @@ onMounted(()=>{
 .sub-item:hover{ background:#f0f6ff; color:var(--text) }
 
 .main{ flex:1; padding:20px; position:relative }
-.top-bar{ display:flex; align-items:center; justify-content:flex-start; gap:12px; position:relative; padding:6px 40px 12px 0 }
+.top-bar{ display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative; padding:6px 40px 12px 0 }
 .top-bar .title{ font-size:18px; font-weight:700 }
+
+.logout-btn{ 
+  background: #dc2626; 
+  color: white; 
+  border: none; 
+  padding: 8px 16px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-size: 14px; 
+  font-weight: 500;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.logout-btn:hover{ 
+  background: #b91c1c; 
+}
 
 .settings{ position:absolute; top:12px; right:18px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:8px; cursor:pointer }
 .settings svg{ width:22px; height:22px; fill:var(--muted) }

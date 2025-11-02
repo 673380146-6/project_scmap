@@ -5,12 +5,12 @@
     <!-- Loading overlay -->
     <div class="loading-overlay" v-if="isLoading">
       <div class="loading-spinner"></div>
-      <p>กำลังโหลดโมเดลคณะวิทยาศาสตร์...</p>
+      <p>กำลังโหลดแผนที่ Science Map...</p>
     </div>
     
     <!-- Navigation hint - แสดงเฉพาะเมื่อโหลดเสร็จ -->
     <div class="navigation-hint" v-if="!isLoading">
-      <p>💡 ใช้เมาส์เพื่อหมุนและซูมโมเดล | เลือกตึกจากเมนูด้านซ้ายเพื่อดูรายละเอียด</p>
+      <p>🎯 ยินดีต้อนรับสู่ Science Map! ใช้เมาส์หมุนดูรอบๆ และซูมเข้า-ออกเพื่อสำรวจแผนที่</p>
     </div>
   </div>
 </template>
@@ -34,11 +34,11 @@ function init3D() {
   
   // Scene setup
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x87ceeb) // Sky blue
+  scene.background = new THREE.Color(0xffffff) // White background
   
-  // Camera setup - เริ่มต้นซูมเข้าใกล้มากขึ้น
-  camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000)
-  camera.position.set(3, 2.5, 4) // ซูมเข้าใกล้มากขึ้นอีก
+  // Camera setup - ปรับตำแหน่งให้เหมาะกับโมเดล sc_all
+  camera = new THREE.PerspectiveCamera(85, container.clientWidth / container.clientHeight, 0.1, 1000)
+  camera.position.set(5, 3, 6) // ซูมเข้าไปใกล้มากๆ แบบเดินติดอาคาร
   
   // Renderer setup
   renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -69,18 +69,18 @@ function init3D() {
   controls.enableDamping = true
   controls.dampingFactor = 0.05
   controls.enableZoom = true
-  controls.enablePan = true
+  controls.enablePan = false // ปิดการขยับแผนที่
   
-  // จำกัดการหมุนในแนวดิ่ง (Polar Angle) - ไม่ให้ไปด้านล่างแผนที่
-  controls.minPolarAngle = 0 // มองจากด้านบนได้
-  controls.maxPolarAngle = Math.PI / 2 // ไม่ให้มองจากด้านล่างพื้น (หยุดที่ระดับพื้น)
+  // จำกัดการหมุนในแนวดิ่ง (Polar Angle) - ไม่ให้เห็นใต้แมพ
+  controls.minPolarAngle = 0.1 // มองขึ้นได้เล็กน้อย
+  controls.maxPolarAngle = Math.PI / 2.2 // ไม่ให้มองจากด้านล่างแมพ
   
   // ไม่จำกัดการหมุนรอบแกน Y (Azimuth) - หมุนได้ 360 องศา
   // controls.minAzimuthAngle และ controls.maxAzimuthAngle ไม่ต้องตั้งค่า
   
-  controls.minDistance = 2 // ซูมเข้าได้ใกล้มาก
-  controls.maxDistance = 50 // ซูมออกได้ไม่เกิน 50 - ไม่ให้แผนที่เล็กเกินไป
-  controls.zoomSpeed = 1.5 // ความเร็วซูมเพิ่มขึ้น
+  controls.minDistance = 0.5 // ซูมเข้าได้ใกล้มากๆ แบบเดินติดอาคาร
+  controls.maxDistance = 30 // ซูมออกได้เพื่อดูภาพรวม
+  controls.zoomSpeed = 1.5 // ความเร็วซูมเร็วขึ้น
   
   // Load the real 3D model
   loadMainMapModel()
@@ -99,7 +99,7 @@ function loadMainMapModel() {
   
   // โหลดโมเดลจากไฟล์จริง
   loader.load(
-    '/models/mainmapmodels.glb',
+    '/models/sc_all.glb',
     (gltf) => {
       console.log('Model loaded successfully:', gltf)
       
@@ -120,11 +120,28 @@ function loadMainMapModel() {
       // จัดให้อยู่กึ่งกลาง
       model.position.sub(center.multiplyScalar(model.scale.x))
       
-      // เพิ่ม shadow
+      // เพิ่ม shadow และ log ข้อมูลตึก
       model.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true
           child.receiveShadow = true
+          
+          // Log ข้อมูลตำแหน่งและชื่อของแต่ละตึก
+          console.log('Building found:', {
+            name: child.name,
+            position: {
+              x: child.position.x,
+              y: child.position.y,
+              z: child.position.z
+            },
+            scale: {
+              x: child.scale.x,
+              y: child.scale.y,
+              z: child.scale.z
+            },
+            material: child.material ? child.material.name : 'No material name'
+          })
+          
           // ปรับปรุง material พื้นฐาน
           if (child.material) {
             child.material.needsUpdate = true
@@ -139,11 +156,11 @@ function loadMainMapModel() {
       const modelSize = boundingBox.getSize(new THREE.Vector3())
       const maxDimension = Math.max(modelSize.x, modelSize.y, modelSize.z)
       
-      // ซูมเข้าใกล้มากขึ้นอีก - ให้ผู้ใช้ซูมออกเอง
+      // ตั้งกล้องให้อยู่ใกล้มากๆ ในแผนที่
       camera.position.set(
-        maxDimension * 0.3,  // ซูมเข้าใกล้มากขึ้น
-        maxDimension * 0.25, // ความสูงต่ำลงอีก
-        maxDimension * 0.3   // ระยะใกล้มากขึ้น
+        maxDimension * 0.3,  // ซูมเข้าใกล้มากๆ
+        maxDimension * 0.2,  // ความสูงแบบเดินใกล้พื้น
+        maxDimension * 0.4   // ระยะใกล้มากๆ แบบเดินติดอาคาร
       )
       camera.lookAt(model.position)
       
@@ -246,14 +263,14 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   position: relative;
-  background: #f0f4f8;
+  background: #ffffff;
   overflow: hidden;
 }
 
 .fullscreen-viewer {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
+  background: #ffffff;
 }
 
 .loading-overlay {
