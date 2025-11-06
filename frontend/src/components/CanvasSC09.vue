@@ -115,9 +115,16 @@ function init3D() {
   camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000)
   camera.position.set(5, 4, 6) // ซูมออกมากขึ้น
   
-  // Renderer setup
-  renderer = new THREE.WebGLRenderer({ antialias: true })
+  // Renderer setup - ปรับปรุงประสิทธิภาพ
+  renderer = new THREE.WebGLRenderer({ 
+    antialias: true,
+    powerPreference: "high-performance",
+    alpha: false,
+    stencil: false,
+    depth: true
+  })
   renderer.setSize(container.clientWidth, container.clientHeight)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   container.appendChild(renderer.domElement)
@@ -149,16 +156,21 @@ function init3D() {
   bottomLight.position.set(0, -50, 0)
   scene.add(bottomLight)
   
-  // Controls
+  // Controls - ปรับปรุงเพื่อความเรียบ
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
-  controls.dampingFactor = 0.05
+  controls.dampingFactor = 0.08 // เพิ่มเป็น 0.08 เพื่อความเรียบมากขึ้น
   controls.enableZoom = false // ปิดการซูม - คงมุมกล้องไว้
   controls.enablePan = false // ปิดการขยับแผนที่
   
   // จำกัดการหมุนในแนวดิ่ง (Polar Angle) - ไม่ให้เห็นใต้แมพ
   controls.minPolarAngle = 0.1 // มองขึ้นได้เล็กน้อย
   controls.maxPolarAngle = Math.PI / 2.2 // ไม่ให้มองจากด้านล่างแมพ
+  
+  // เพิ่ม smooth controls
+  controls.rotateSpeed = 0.5 // ลดความเร็วการหมุน
+  controls.autoRotate = false
+  controls.screenSpacePanning = false
   
   // ไม่จำกัดการหมุนรอบแกน Y (Azimuth) - หมุนได้ 360 องศา
   
@@ -308,6 +320,8 @@ function animate() {
   }
   
   if (renderer && scene && camera) {
+    // เพิ่ม performance optimization
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.render(scene, camera)
   }
 }

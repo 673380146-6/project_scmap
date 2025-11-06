@@ -32,7 +32,7 @@
     </nav>
 
     <!-- Background section -->
-    <div class="full-background" :class="{ exit: isExiting }" @click="goToLogin">
+    <div class="full-background" :class="{ exit: isExiting }" @click="goToMap">
       <svg viewBox="0 0 1000 200">
         <defs>
           <path id="curve" d="M00,150 Q500,20 1000,150" fill="transparent" />
@@ -86,7 +86,7 @@ const isExiting = ref(false);
 const showTeam = ref(false);
 const showInfo = ref(false);
 
-const goToLogin = () => {
+const goToMap = () => {
   isExiting.value = true;
   setTimeout(() => {
     router.push("/map");

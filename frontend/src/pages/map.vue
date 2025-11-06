@@ -10,42 +10,50 @@
         <input
           type="text"
           v-model="searchQuery"
-          placeholder="ค้นหา..."
+          placeholder="ค้นหาห้อง (เช่น CP9127)"
+          @keyup.enter="searchRoom"
+          @input="onSearchInput"
         />
+        <button class="search-btn" @click="searchRoom" v-if="searchQuery.trim()">
+          <span>🎯</span>
+        </button>
+      </div>
+      
+      <!-- Search Results -->
+      <div class="search-results" v-if="searchResults.length > 0">
+        <div class="results-title">ผลการค้นหา:</div>
+        <div 
+          class="result-item" 
+          v-for="result in searchResults" 
+          :key="result.room"
+          @click="goToRoom(result)"
+        >
+          <div class="room-number">{{ result.room }}</div>
+          <div class="room-info">
+            <div class="building">{{ result.building }}</div>
+            <div class="floor">ชั้น {{ result.floor }}</div>
+          </div>
+        </div>
       </div>
       <ul class="menu-list">
         <li
           class="menu-item has-sub"
           v-show="matchesSearch('ตึกคณะ')"
-          @click.stop="handleBuildingClick"
         >
-          <span class="icon">🏛</span>
-          <span class="label">ตึกคณะ</span>
+          <div @click.stop="handleBuildingClick">
+            <span class="icon">🏛</span>
+            <span class="label">ตึกคณะ</span>
+          </div>
+          <div
+            class="submenu"
+            :class="{ open: submenuOpen }"
+          >
+            <div class="sub-item" @click="showCanvas('SC01')">SC01</div>
+            <div class="sub-item" @click="showCanvas('SC08')">SC08</div>
+            <div class="sub-item" @click="showCanvas('SC09')">SC09</div>
+          </div>
         </li>
-        <div
-          class="submenu"
-          :class="{ open: submenuOpen }"
-        >
-          <div class="sub-item" @click="showCanvas('SC01')">SC01</div>
-          <div class="sub-item" @click="showCanvas('SC08')">SC08</div>
-          <div class="sub-item" @click="showCanvas('SC09')">SC09</div>
-        </div>
-        <li
-          class="menu-item"
-          v-show="matchesSearch('ที่จอดรถยนต์')"
-          @click="showCanvas('ที่จอดรถยนต์')"
-        >
-          <span class="icon">🚗</span>
-          <span class="label">ที่จอดรถยนต์</span>
-        </li>
-        <li
-          class="menu-item"
-          v-show="matchesSearch('ที่จอดรถมอไซค์')"
-          @click="showCanvas('ที่จอดรถมอไซค์')"
-        >
-          <span class="icon">🛵</span>
-          <span class="label">ที่จอดรถมอไซค์</span>
-        </li>
+        <!-- ที่จอดรถ ถูกลบออกตามคำขอ -->
         
       </ul>
     </aside>
@@ -54,75 +62,54 @@
       <div class="top-bar">
         <div class="welcome-section">
           <div class="title">Science Map</div>
-          <div class="user-welcome" v-if="displayName">
-            <span>สวัสดีคุณ {{ displayName }}</span>
-          </div>
         </div>
-        <div class="settings" :class="{ active: settingsOpen }" @click.stop="toggleSettingsMenu">
-          <div class="profile-preview">
-            <img v-if="user.profilePic" :src="user.profilePic" alt="profile" class="profile-mini" />
-            <span v-else class="icon-setting">👱🏻‍♂️</span>
-          </div>
-          <div class="settings-menu" @click.stop="preventClose">
-            <div class="profile-info">
-              <div class="name">{{ user.fullName || 'ชื่อ นามสกุล' }}</div>
-              <div class="faculty-major">{{ user.facultyMajor || 'คณะของคุณ | สาขาของคุณ' }}</div>
-              <div class="student-id" v-if="studentId">
-                รหัส: {{ studentId }}
-              </div>
-            </div>
-
-            <a href="index.html" class="logout" @click.prevent="logoutUser">ออกจากระบบ</a>
-          </div>
+        
+        <div class="home-button" @click="goToHome" style="display: flex !important;">
+          <span class="home-icon">🏠</span>
+          <span class="home-text">หน้าแรก</span>
         </div>
       </div>
 
       <div class="canvas-area">
-        <component :is="currentCanvasComponent" ref="currentCanvasRef" />
+        <component 
+          :is="currentCanvasComponent" 
+          ref="currentCanvasRef"
+          :showMarker="showMarker"
+          :selectedRoom="selectedRoom"
+        />
+        
+
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { initializeApp } from 'firebase/app'
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import apiService from '@/services/api.js'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import ModelViewer from '@/components/ModelViewer.vue'
 import CanvasSC01 from '@/components/CanvasSC01.vue'
+import CanvasSC08 from '@/components/CanvasSC08.vue'
 import CanvasSC09 from '@/components/CanvasSC09.vue'
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyAmfunEqGUmZHabiPKYwCuay3JCRVXa_DU",
-  authDomain: "project-web-f9a73.firebaseapp.com",
-  projectId: "project-web-f9a73",
-  storageBucket: "project-web-f9a73.appspot.com",
-  messagingSenderId: "809705005062",
-  appId: "1:809705005062:web:f4736c194fc7cf68c5e387",
-  measurementId: "G-BK760T9XCW"
-}
-const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
-const storage = getStorage(app)
+// router
+const router = useRouter()
 
 // reactive state
 const searchQuery = ref('')
 const submenuOpen = ref(false)
-const settingsOpen = ref(false)
-const user = ref({ fullName: '', facultyMajor: 'กำลังโหลดข้อมูล...', profilePic: '' })
 const currentCanvas = ref('modelViewer')  // default component name
-const defaultProfilePic = 'default-profile.png'
-const studentId = ref('')
-const isLoadingUserData = ref(true)
 const currentCanvasRef = ref(null) // ref สำหรับ component ปัจจุบัน
+const searchResults = ref([])
+const showMarker = ref(false)
+const markerPosition = ref({ x: 0, y: 0, z: 0 })
+const selectedRoom = ref(null)
 
 // components registry
 const components = {
   ModelViewer,
   CanvasSC01,
+  CanvasSC08,
   CanvasSC09
 }
 
@@ -132,18 +119,34 @@ const currentCanvasComponent = computed(() => {
   return components[componentName] || ModelViewer
 })
 
-const displayName = computed(() => {
-  return user.value.fullName || 'ผู้ใช้'
-})
+
 
 // mapping name to component names — ต้องมี component จริงในโปรเจกต์ของคุณ
 const canvasComponents = {
   modelViewer: 'ModelViewer',      // default 3D model component
   SC01: 'CanvasSC01',
   SC08: 'CanvasSC08',
-  SC09: 'CanvasSC09',
-  'ที่จอดรถยนต์': 'CanvasCarParking',
-  'ที่จอดรถมอไซค์': 'ModelViewer' // ใช้ ModelViewer และจะ toggle โซนจอดรถ
+  SC09: 'CanvasSC09'
+}
+
+// ฐานข้อมูลห้อง
+const roomDatabase = {
+  // ตึก SC01
+  'SC0101': { building: 'SC01', floor: 1, room: 'SC0101', description: 'ห้องเรียน', position: { x: -10, y: 2, z: 5 } },
+  'SC0102': { building: 'SC01', floor: 1, room: 'SC0102', description: 'ห้องปฏิบัติการ', position: { x: -8, y: 2, z: 5 } },
+  'SC0201': { building: 'SC01', floor: 2, room: 'SC0201', description: 'ห้องเรียน', position: { x: -10, y: 6, z: 5 } },
+  
+  // ตึก SC08
+  'SC0801': { building: 'SC08', floor: 1, room: 'SC0801', description: 'ห้องเรียน', position: { x: 0, y: 2, z: 0 } },
+  'SC0802': { building: 'SC08', floor: 1, room: 'SC0802', description: 'ห้องปฏิบัติการ', position: { x: 2, y: 2, z: 0 } },
+  'SC0803': { building: 'SC08', floor: 1, room: 'SC0803', description: 'ห้องสำนักงาน', position: { x: 4, y: 2, z: 0 } },
+  
+  // ตึก SC09 (CP = Computer Programming)
+  'CP9101': { building: 'SC09', floor: 1, room: 'CP9101', description: 'ห้องเรียนคอมพิวเตอร์', position: { x: 10, y: 2, z: -5 } },
+  'CP9102': { building: 'SC09', floor: 1, room: 'CP9102', description: 'ห้องปฏิบัติการคอมพิวเตอร์', position: { x: 12, y: 2, z: -5 } },
+  'CP9127': { building: 'SC09', floor: 1, room: 'CP9127', description: 'ห้องปฏิบัติการโปรแกรมมิ่ง', position: { x: 15, y: 2, z: -3 } },
+  'CP9201': { building: 'SC09', floor: 2, room: 'CP9201', description: 'ห้องวิจัย', position: { x: 10, y: 6, z: -5 } },
+  'CP9301': { building: 'SC09', floor: 3, room: 'CP9301', description: 'ห้องสัมมนา', position: { x: 10, y: 10, z: -5 } },
 }
 
 function matchesSearch(name) {
@@ -166,25 +169,18 @@ function showCanvas(name) {
   if (canvasComponents[name]) {
     currentCanvas.value = name
     
-    // ถ้าเป็นการเลือก "ที่จอดรถมอไซค์" ให้เรียก toggle function
-    if (name === 'ที่จอดรถมอไซค์') {
-      // รอให้ component โหลดเสร็จก่อนเรียก function
-      setTimeout(() => {
-        if (currentCanvasRef.value && currentCanvasRef.value.toggleMotorcycleParkingZones) {
-          currentCanvasRef.value.toggleMotorcycleParkingZones()
-          console.log('Toggled motorcycle parking zones from sidebar menu')
-        }
-      }, 100)
-    }
+    // (รถและฟังก์ชันที่เกี่ยวข้องถูกลบออก)
   } else {
     currentCanvas.value = 'modelViewer'
   }
 }
 
 function handleBuildingClick() {
+  console.log('Building clicked! submenuOpen:', submenuOpen.value)
   // ถ้า submenu ปิดอยู่ ให้เปิด submenu
   if (!submenuOpen.value) {
     toggleSubmenu()
+    console.log('Opening submenu, submenuOpen:', submenuOpen.value)
   } else {
     // ถ้า submenu เปิดอยู่แล้ว ให้กลับไปหน้าแมพหลัก
     submenuOpen.value = false
@@ -193,90 +189,109 @@ function handleBuildingClick() {
   }
 }
 
-function toggleSettingsMenu() {
-  settingsOpen.value = !settingsOpen.value
-}
-
-// ปิดเมนูเมื่อคลิกข้างนอก
-function closeSettingsMenu() {
-  settingsOpen.value = false
-}
-
-// ป้องกันการปิดเมนูเมื่อคลิกภายในเมนู
-function preventClose(event) {
-  event.stopPropagation()
-}
-
-async function logoutUser() {
-  try {
-    await apiService.logout()
-  } catch (error) {
-    console.log('Logout API error:', error)
-  } finally {
-    // ล้าง localStorage และเปลี่ยนหน้า
-    localStorage.clear()
-    window.location.href = '/'
-  }
+function goToHome() {
+  router.push('/')
 }
 
 
 
-
-
-onMounted(async () => {
-  // เพิ่ม event listener สำหรับปิดเมนู
-  document.addEventListener('click', closeSettingsMenu)
-  
-  // โหลดข้อมูลผู้ใช้จาก localStorage
-  const userId = localStorage.getItem('userId')
-  const userName = localStorage.getItem('userName')
-  const studentIdValue = localStorage.getItem('studentId')
-  const facultyValue = localStorage.getItem('faculty')
-  const majorValue = localStorage.getItem('major')
-  
-  studentId.value = studentIdValue || ''
-  
-  if (userId && userName) {
-    // ถ้ามีการล็อกอิน ใช้ข้อมูลจาก localStorage เป็นหลัก
-    const facultyText = facultyValue || 'ไม่ระบุคณะ'
-    const majorText = majorValue || 'ไม่ระบุสาขา'
-    
-    user.value = {
-      fullName: userName,
-      facultyMajor: `${facultyText} | ${majorText}`,
-      profilePic: ''
-    }
-    
-    isLoadingUserData.value = false
-    console.log('Using localStorage data:', user.value)
-    
-    // ลองดึงข้อมูลจาก API เป็นตัวสำรอง (ถ้าต้องการ)
-    try {
-      const userResponse = await apiService.getUserById(userId)
-      if (userResponse && userResponse.success && userResponse.data) {
-        const userData = userResponse.data
-        console.log('API data available, updating if needed')
-        
-        // อัพเดทข้อมูลถ้า API มีข้อมูลที่ใหม่กว่า
-        if (userData.faculty && userData.major) {
-          user.value.facultyMajor = `${userData.faculty} | ${userData.major}`
-          console.log('Updated from API:', user.value)
-        }
-      }
-    } catch (error) {
-      console.log('API fallback failed, using localStorage data:', error.message)
-    }
-    
+function onSearchInput() {
+  if (searchQuery.value.trim().length >= 2) {
+    searchRoom()
   } else {
-    // ถ้าไม่ได้ล็อกอิน ใช้ข้อมูลเริ่มต้น
-    user.value = {
-      fullName: 'ผู้ใช้ระบบ',
-      facultyMajor: 'กรุณาล็อกอินเพื่อดูข้อมูล',
-      profilePic: ''
-    }
-    isLoadingUserData.value = false
+    searchResults.value = []
+    showMarker.value = false
   }
-})
+}
+
+function searchRoom() {
+  const query = searchQuery.value.trim().toUpperCase()
+  if (!query) {
+    searchResults.value = []
+    return
+  }
+  
+  // ค้นหาห้องที่ตรงกับคำค้นหา
+  const results = []
+  for (const [roomCode, roomData] of Object.entries(roomDatabase)) {
+    if (roomCode.toUpperCase().includes(query) || 
+        roomData.description.includes(query) ||
+        roomData.building.includes(query)) {
+      results.push(roomData)
+    }
+  }
+  
+  searchResults.value = results.slice(0, 5) // แสดงไม่เกิน 5 ผลลัพธ์
+  
+  // ถ้าพบผลลัพธ์เดียว ให้ไปที่ห้องนั้นเลย
+  if (results.length === 1) {
+    goToRoom(results[0])
+  }
+}
+
+function goToRoom(room) {
+  console.log('Going to room:', room)
+  selectedRoom.value = room
+  
+  // กลับไปหน้าแผนที่หลักเพื่อแสดง marker
+  currentCanvas.value = 'modelViewer'
+  
+  // แสดง marker ที่ตำแหน่งห้องบนแผนที่หลัก
+  showMarker.value = true
+  markerPosition.value = room.position || { x: 0, y: 5, z: 0 }
+  
+  // ปิดผลลัพธ์การค้นหา
+  searchResults.value = []
+  
+  // ไม่แสดงข้อมูลห้อง แค่แสดง marker
+}
+
+function showRoomInfo(room) {
+  // สร้าง popup สวยๆ แทน alert
+  const notification = document.createElement('div')
+  notification.className = 'room-notification'
+  notification.innerHTML = `
+    <div class="notification-content">
+      <div class="room-header">
+        <span class="room-code">${room.room}</span>
+        <button class="close-notification" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+      </div>
+      <div class="room-details">
+        <div><strong>ตึก:</strong> ${room.building}</div>
+        <div><strong>ชั้น:</strong> ${room.floor}</div>
+        <div><strong>รายละเอียด:</strong> ${room.description}</div>
+      </div>
+    </div>
+  `
+  
+  // เพิ่ม CSS สำหรับ notification
+  notification.style.position = 'fixed'
+  notification.style.top = '80px'
+  notification.style.right = '20px'
+  notification.style.zIndex = '10000'
+  notification.style.background = 'white'
+  notification.style.borderRadius = '12px'
+  notification.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)'
+  notification.style.padding = '0'
+  notification.style.minWidth = '300px'
+  notification.style.animation = 'slideInRight 0.3s ease'
+  
+  document.body.appendChild(notification)
+  
+  // ลบ notification หลัง 5 วินาที
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.style.animation = 'slideOutRight 0.3s ease'
+      setTimeout(() => notification.remove(), 300)
+    }
+  }, 5000)
+}
+
+
+
+
+
+
 </script>
 
 <style scoped>
@@ -337,10 +352,11 @@ html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans
 }
 
 .search-box {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:8px;
   background: var(--panel-3); border:1px solid #ccc;
   padding:8px 10px; border-radius:999px;
   margin:6px 8px 18px;
+  position: relative;
 }
 .search-box .icon {
   font-size:18px; color: var(--muted);
@@ -353,6 +369,77 @@ html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans
 }
 .sidebar:hover .search-box input {
   width:100%; opacity:1;
+}
+
+.search-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+.search-btn:hover {
+  background: #1976d2;
+  transform: scale(1.1);
+}
+
+.search-results {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin: 0 8px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.results-title {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid #eee;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+.result-item:hover {
+  background: var(--hover);
+}
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.room-number {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 14px;
+  min-width: 60px;
+}
+
+.room-info {
+  flex: 1;
+}
+.building {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+.floor {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .menu-list {
@@ -383,11 +470,27 @@ html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans
   border-color: var(--accent);
 }
 
+.menu-item.has-sub {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.menu-item.has-sub > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
 .submenu {
   display: none;
-  flex-direction: column; gap:6px;
-  margin-left:46px; margin-top:6px; margin-bottom:4px;
+  flex-direction: column; 
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding-left: 46px;
 }
+
 .submenu.open {
   display: flex;
 }
@@ -429,6 +532,65 @@ html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans
   font-size: 22px;
   color: var(--text);
   margin: 0;
+}
+
+.home-button {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: #1f8fff !important; /* ใช้สีฟ้าโดยตรง */
+  color: white !important;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 14px;
+  user-select: none;
+  box-shadow: 0 4px 12px rgba(31, 143, 255, 0.4);
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 1000;
+  border: 2px solid #1976d2;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.home-button:hover {
+  background: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(31, 143, 255, 0.4);
+}
+
+.home-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(31, 143, 255, 0.3);
+}
+
+.home-icon {
+  font-size: 16px;
+}
+
+.home-text {
+  font-family: 'Mitr', 'Noto Sans Thai', sans-serif;
+  white-space: nowrap;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .home-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .home-text {
+    display: none; /* ซ่อนข้อความในมือถือ เหลือแค่ไอคอน */
+  }
+  
+  .home-icon {
+    font-size: 18px;
+  }
 }
 
 .user-welcome {
@@ -560,4 +722,89 @@ html,body{ height:100%; margin:0; font-family: 'Mitr', 'Noto Sans Thai', ui-sans
   display:flex; align-items:center; justify-content:center;
   color: #666; overflow:hidden; background: #fff;
 }
+
+/* Room Notification Styles */
+:global(.room-notification) {
+  font-family: 'Mitr', 'Noto Sans Thai', sans-serif;
+}
+
+:global(.notification-content) {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+:global(.room-header) {
+  background: linear-gradient(135deg, #1f8fff 0%, #1976d2 100%);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:global(.room-code) {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+:global(.close-notification) {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+:global(.close-notification:hover) {
+  background: rgba(255,255,255,0.2);
+}
+
+:global(.room-details) {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+:global(.room-details > div) {
+  margin-bottom: 8px;
+}
+
+:global(.room-details > div:last-child) {
+  margin-bottom: 0;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+
 </style>
